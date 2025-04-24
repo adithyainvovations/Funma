@@ -311,12 +311,21 @@
     }
 
     function exportToExcel() {
-      let students = JSON.parse(localStorage.getItem("students")) || [];
-      const data = [["Name", "Amount", "Status"], ...students.map(s => [s.name, s.amount, s.paid ? "Paid" : "Pending"])];
-      const worksheet = XLSX.utils.aoa_to_sheet(data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-      XLSX.writeFile(workbook, "student_fund_data.xlsx");
+  let students = JSON.parse(localStorage.getItem("students")) || [];
+  const data = [["Name", "Amount", "Status"], ...students.map(s => [s.name, s.amount, s.paid ? "Paid" : "Pending"])];
+  
+  const worksheet = XLSX.utils.aoa_to_sheet(data);
+  
+  // Set column widths: Name column wider
+  worksheet['!cols'] = [
+    { wch: 25 }, // "Name" column width (in characters)
+    { wch: 10 }, // "Amount" column
+    { wch: 12 }  // "Status" column
+  ];
+  
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+  XLSX.writeFile(workbook, "student_fund_data.xlsx");
     }
 
     function changeAllAmounts() {
