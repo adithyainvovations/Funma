@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FundMate - Class Fund Collection</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #111b21;
+      color: white;
+      font-family: "Segoe UI", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    h1, h2 {
+      color: #25d366;
+      margin-bottom: 15px;
+    }
+
+    .fundmate {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #25d366;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .container {
+      background: #202c33;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px #25d36655;
+      width: 90%;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    .button {
+      display: block;
+      background-color: #25d366;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      width: 90%;
+      margin: 10px auto;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: #1daa5c;
+      transform: scale(1.05);
+    }
+
+    .input-field {
+      width: 90%;
+      padding: 12px;
+      margin: 10px auto;
+      border-radius: 8px;
+      border: none;
+      display: block;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    table {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background: #2a2f32;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #555;
+      text-align: center;
+    }
+
+    th {
+      background: #25d366;
+      color: white;
+      font-weight: bold;
+    }
+
+    .status-box {
+      padding: 10px;
+      font-weight: bold;
+      border-radius: 5px;
+      width: 80px;
+      display: inline-block;
+    }
+
+    .paid {
+      background: #008000;
+      color: white;
+    }
+
+    .pending {
+      background: #ff3b30;
+      color: white;
+    }
+
+    .summary {
+      margin-top: 20px;
+    }
+
+    .logout-btn {
+      position: relative;
+      bottom: -30px;
+    }
+
+    #user-panel {
+      position: relative;
+    }
+
+    .back-btn {
+      font-size: 14px;
+      padding: 8px 15px;
+      margin-top: 15px;
+      width: 90%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="home">
+    <div class="container">
+      <div class="fundmate">FundMate</div>
+      <h1>Welcome Everyone</h1>
+      <button class="button" onclick="showLogin()">Admin Login</button>
+      <button class="button" onclick="showUser()">User View</button>
+    </div>
+  </div>
+
+  <div id="login-panel" class="hidden">
+    <div class="container">
+      <h2>Admin Login</h2>
+      <input type="text" id="admin-username" placeholder="Username" class="input-field">
+      <input type="password" id="admin-password" placeholder="Password" class="input-field">
+      <button class="button" onclick="validateLogin()">Login</button>
+      <p id="login-error" style="color: red;"></p>
+    </div>
+  </div>
+
+  <div id="admin-panel" class="hidden">
+    <div class="container">
+      <h2>Admin Dashboard</h2>
+      <input type="text" id="student-name" placeholder="Student Name" class="input-field">
+      <input type="number" id="amount" placeholder="Amount" class="input-field">
+      <button class="button" onclick="addStudent()">Add Student</button>
+      <button class="button" onclick="changeAllAmounts()">Change All Amounts</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="student-list"></tbody>
+    </table>
+
+    <div class="summary">
+      <p><strong>Total:</strong> ₹<span id="total-amount">0</span></p>
+      <p><strong>Received:</strong> ₹<span id="received-amount">0</span></p>
+      <p><strong>Remaining:</strong> ₹<span id="remaining-amount">0</span></p>
+    </div>
+    <button class="button" onclick="exportToExcel()">Export to Excel</button>
+    <button class="button logout-btn" onclick="goHome()">Logout</button>
+  </div>
+
+  <div id="user-panel" class="hidden">
+    <div class="container">
+      <h2>Student Payment Status</h2>
+      <div class="summary">
+        <p><strong>Total:</strong> ₹<span id="user-total-amount">0</span></p>
+        <p><strong>Received:</strong> ₹<span id="user-received-amount">0</span></p>
+        <p><strong>Remaining:</strong> ₹<span id="user-remaining-amount">0</span></p>
+        <p><strong>Students Pending Payment:</strong> <span id="pending-student-count">0</span></p>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Status</th></tr>
+      </thead>
+      <tbody id="user-student-list"></tbody>
+    </table>
+    <button class="button back-btn" onclick="goHome()">Back</button>
+  </div>
+
+  <script>
+    function showLogin() {
+      document.getElementById("home").classList.add("hidden");
+      document.getElementById("login-panel").classList.remove("hidden");
+    }
+
+    function validateLogin() {
+      let username = document.getElementById("admin-username").value;
+      let password = document.getElementById("admin-password").value;
+      if (username === "admin" && password === "password123") {
+        document.getElementById("login-panel").classList.add("hidden");
+        document.getElementById("admin-panel").classList.remove("hidden");
+        loadStudents();
+      } else {
+        document.getElementById("login-error").textContent = "Invalid Username or Password!";
+      }
+    }
+
+    function showUser() {
+      document.getElementById("home").classList.add("hidden");
+      document.getElementById("user-panel").classList.remove("hidden");
+      updateUserView();
+    }
+
+    function goHome() {
+      location.reload();
+    }
+
+    function addStudent() {
+      let name = document.getElementById("student-name").value;
+      let amount = document.getElementById("amount").value;
+      if (!name || !amount) return;
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      students.push({ name, amount: parseInt(amount), paid: false });
+      localStorage.setItem("students", JSON.stringify(students));
+      loadStudents();
+    }
+
+    function loadStudents() {
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      let studentList = document.getElementById("student-list");
+      studentList.innerHTML = "";
+      let totalAmount = 0, receivedAmount = 0;
+
+      students.forEach((student, index) => {
+        totalAmount += student.amount;
+        if (student.paid) receivedAmount += student.amount;
+
+        studentList.innerHTML += `
+          <tr>
+            <td>${student.name}</td>
+            <td>₹${student.amount}</td>
+            <td><span class="status-box ${student.paid ? 'paid' : 'pending'}">${student.paid ? 'Paid' : 'Pending'}</span></td>
+            <td>
+              <button class="button" onclick="togglePayment(${index})">Toggle</button>
+              <button class="button" onclick="deleteStudent(${index})">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("total-amount").textContent = totalAmount;
+      document.getElementById("received-amount").textContent = receivedAmount;
+      document.getElementById("remaining-amount").textContent = totalAmount - receivedAmount;
+      updateUserView();
+    }
+
+    function togglePayment(index) {
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      students[index].paid = !students[index].paid;
+      localStorage.setItem("students", JSON.stringify(students));
+      loadStudents();
+    }
+
+    function deleteStudent(index) {
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      students.splice(index, 1);
+      localStorage.setItem("students", JSON.stringify(students));
+      loadStudents();
+    }
+
+    function updateUserView() {
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      let userList = document.getElementById("user-student-list");
+      userList.innerHTML = "";
+
+      let pendingCount = 0, totalAmount = 0, receivedAmount = 0;
+      students.forEach(student => {
+        totalAmount += student.amount;
+        if (!student.paid) pendingCount++;
+        if (student.paid) receivedAmount += student.amount;
+
+        userList.innerHTML += `
+          <tr>
+            <td>${student.name}</td>
+            <td><span class="status-box ${student.paid ? 'paid' : 'pending'}">${student.paid ? 'Paid' : 'Pending'}</span></td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("user-total-amount").textContent = totalAmount;
+      document.getElementById("user-received-amount").textContent = receivedAmount;
+      document.getElementById("user-remaining-amount").textContent = totalAmount - receivedAmount;
+      document.getElementById("pending-student-count").textContent = pendingCount;
+    }
+
+    function exportToExcel() {
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      const data = [["Name", "Amount", "Status"], ...students.map(s => [s.name, s.amount, s.paid ? "Paid" : "Pending"])];
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      XLSX.writeFile(workbook, "student_fund_data.xlsx");
+    }
+
+    function changeAllAmounts() {
+      let newAmount = prompt("Enter the new amount for all students:");
+      if (newAmount === null) return;
+      newAmount = parseFloat(newAmount);
+      if (isNaN(newAmount) || newAmount < 0) {
+        alert("Invalid amount.");
+        return;
+      }
+      let students = JSON.parse(localStorage.getItem("students")) || [];
+      students.forEach(student => student.amount = newAmount);
+      localStorage.setItem("students", JSON.stringify(students));
+      loadStudents();
+    }
+  </script>
+</body>
+</html>
